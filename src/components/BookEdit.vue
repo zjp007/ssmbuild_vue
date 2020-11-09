@@ -1,6 +1,10 @@
 <template>
 	<div>
 		<h1>{{id}}</h1>
+    <div>
+      <el-button @click="editGoback">返回</el-button>
+      <el-button type="primary" @click="saveBook">保存</el-button>
+    </div>
 		<el-row>
 		<el-col :span="4"><div class="grid-content bg-purple">ID：</div></el-col>
 		<el-col :span="4"><div class="grid-content bg-purple-light">{{book.bookId}}</div></el-col>
@@ -12,7 +16,6 @@
 		  <el-input v-model="book.detail"></el-input>
 		</el-row>
 
-		<el-button type="primary" @click="saveBook">保存</el-button>
 	</div>
 </template>
 
@@ -32,18 +35,20 @@
 		},
 		methods:{
 			getBook(){
-				this.$axios.get( this.HOST + "/book/get",{
-						params :{
-							booksId: this.book.bookId
-						}
-					}
-			        ).then(res=>{
-			          this.book = res.data;
-			          console.log(res);
-
-			        }).catch(error=>{
-			            console.log(error)
-			        });
+        if(this.book.bookId != undefined && this.book.bookId != null && this.book.bookId != ''){
+          this.$axios.get( this.HOST + "/book/get",{
+              params :{
+                booksId: this.book.bookId
+              }
+            }
+                ).then(res=>{
+                  this.book = res.data;
+                  console.log(res);
+  
+                }).catch(error=>{
+                    console.log(error)
+                });
+        }
 			},
 			saveBook(){
 				this.$axios.post( this.HOST + "/book/save",
@@ -51,16 +56,19 @@
 					
 			        ).then(res=>{
 			          this.book = res.data;
-			          console.log(res);
-
+                console.log(res);
+                this.$router.push({name:'BooksList'});
 			        }).catch(error=>{
 			            console.log(error)
 			        });
-			}
+      },
+      editGoback(){
+        this.$router.go(-1);// 利用路由返回上一个页面
+      }
 		},
 		created(){
 			console.log(this.bookId);
-      		this.getBook();
+      this.getBook();
     	}
 	})
 </script>

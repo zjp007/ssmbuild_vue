@@ -2,19 +2,22 @@
   <div>
 
     <div>
-      <div class="search-div">
+      <div class="search-div display-inline-block float-l">
       <el-input v-model="search" placeholder="请输入内容"></el-input>  
       </div>
-      <div class="search-btn">
+      <div class="search-btn display-inline-block float-l">
         <el-button type="primary" @click="updateTableDate">查询</el-button>
-        <el-button type="danger" @click="delateData">删除</el-button>
+        <el-button type="danger" :disabled="disabled" @click="delateData">删除</el-button>
+        <el-button type="primary" @click="handleClick">新增</el-button>
       </div>
+      <span>{{multipleSelection.length}}</span>
     </div>
     
     
 
-    <el-table :data="tableData" stripe style="width: 100%" @selection-change="handleSelectionChange">
-      <el-table-column type="selection" width="55"></el-table-column>
+    <el-table :data="tableData" stripe style="width: 100%" row-key="bookID"
+    @selection-change="handleSelectionChange">
+      <el-table-column type="selection" width="55" :reserve-selection='true'></el-table-column>
       <!-- <el-table-column prop="bookName" label="书名"></el-table-column>
       <el-table-column prop="bookCounts" label="数量"></el-table-column>
       <el-table-column prop="detail" label="描述"></el-table-column> -->
@@ -58,23 +61,19 @@
         totalPageSize: 10,
         currentPage1: 1,
         search: '',
-        multipleSelection: []
+        multipleSelection: [],
+        disabled: true
       }
     },
     methods: {
-      toggleSelection(rows) {     //取消勾选
-        if (rows) {
-          rows.forEach(row => {
-            this.$refs.multipleTable.toggleRowSelection(row);
-          });
-        } else {
-          this.$refs.multipleTable.clearSelection();
-        }
-        console.log(this.multipleSelection);
-      },
-      handleSelectionChange(val) {    //勾选
+      handleSelectionChange(val) {    //勾选、取消勾选触发事件
+      debugger
         this.multipleSelection = val;
-        console.log(this.multipleSelection);
+        if(this.multipleSelection.length <= 0){
+          this.disabled = true;
+        }else{
+          this.disabled = false;
+        }
       },
       handleSizeChange(val) {
         console.log(`每页 ${val} 条`);
@@ -93,62 +92,93 @@
         this.$router.push({name:'BookEdit',params:{id: row.bookID}});
       },
       delateData(){
-        let ids = "";
-        if(this.multipleSelection.length>0){
-          for(let i = 0;i<this.multipleSelection.length>0;i++){
-            ids+= this.multipleSelection[i].bookID;
+        this.$confirm('确认删除?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          this.$axios.post( this.HOST + "/book/delete",
+          {
+            ids: this.checkedBookIDS
           }
-        }
-        this.$axios.post( this.HOST + "/book/deletes",
-        {
-          ids: ids
-        }
-        ).then(res=>{
-          this.updateTableDate();
-          console.log(res);
-
-        }).catch(error=>{
-            console.log(error)
+          ).then(res=>{
+            this.updateTableDate();
+            console.log(res);
+            this.multipleSelection = [];
+            this.disabled = true;
+          }).catch(error=>{
+              console.log(error)
+          });
+        }).catch(() => {
+                    
         });
       },
       updateTableDate(){
         this.$axios.post( this.HOST + "/book/getList",
-        {
-          limit: (this.currentPage1 - 1) * this.pageSize,
-          offset: this.pageSize,
-          conding: "bookName=" + this.search
-        }
-        ).then(res=>{
-          this.tableData = res.data;
-          console.log(res);
-
-        }).catch(error=>{
-            console.log(error)
-        });
-        // getCount
-        this.$axios.post( this.HOST + "/book/getCount",
-            {
-              limit: (this.currentPage1 - 1) * this.pageSize,
-              offset: this.pageSize,
-              conding: "bookName=" + this.search
-            }
+          {
+            limit: (this.currentPage1 - 1) * this.pageSize,
+            offset: this.pageSize,
+            conding: "bookName=" + this.search
+          }
           ).then(res=>{
-            this.totalPageSize = res.data;
+            this.tableData = res.data;
             console.log(res);
 
-        }).catch(error=>{
-            console.log(error)
-        });
-          }
+          }).catch(error=>{
+              console.log(error)
+          });
+          // getCount
+          this.$axios.post( this.HOST + "/book/getCount",
+              {
+                limit: (this.currentPage1 - 1) * this.pageSize,
+                offset: this.pageSize,
+                conding: "bookName=" + this.search
+              }
+            ).then(res=>{
+              this.totalPageSize = res.data;
+              console.log(res);
+
+          }).catch(error=>{
+              console.log(error)
+          });
         },
+        openWarnMsg(msg) {
+          this.$message({
+            message: msg,
+            type: 'warning'
+          });
+        }
+      },
     created(){
       this.updateTableDate();
-    }
+    },
+    computed:{
+          checkedBookIDS(){
+            let ids = '';
+            this.multipleSelection.forEach(item=>{
+              ids += item.bookID + ",";
+            });
+            if(ids.length > 0){
+              ids = ids.slice(0, ids.length - 1);
+            }
+            console.log("ids : " + ids);
+            return ids;
+          }
+        },
   }
 </script>
 
 <style scoped>
-.search-div {
-  width: 200px;
-}
+  .search-div {
+    width: 200px;
+  }
+  .display-inline-block {
+    display: inline-block;
+  }
+  .float-l {
+    float: left;
+  }
+  .float-r {
+    float: right;
+  }
 </style>

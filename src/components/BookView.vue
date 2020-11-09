@@ -1,6 +1,9 @@
 <template>
 	<div>
 		<h1>{{id}}</h1>
+    <div>
+      <el-button @click="viewGoback">返回</el-button>
+    </div>
 		<el-row>
 		  <el-col :span="4"><div class="grid-content bg-purple">书名：</div></el-col>
 		  <el-col :span="4"><div class="grid-content bg-purple-light">{{book.bookName}}</div></el-col>
@@ -36,7 +39,10 @@
 			        }).catch(error=>{
 			            console.log(error)
 			        });
-			}
+      },
+      goback(){
+        this.$router.go(-1);  //  利用路由返回上一个页面
+      }
 		},
 		created(){
 			console.log(this.bookId);
